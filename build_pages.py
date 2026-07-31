@@ -18,6 +18,7 @@ Run:  python3 build_pages.py
 import hashlib
 import os
 import re
+import shutil
 import xml.etree.ElementTree as ET
 import zipfile
 
@@ -162,19 +163,25 @@ def main():
             stale = os.path.join(ZIPS, addon_id, "index.html")
             if os.path.exists(stale):
                 os.remove(stale)
-    dl = "zips/repository.anchor/" + repo_zip
+    # Put the repository zip at the site ROOT so it is the first thing a human
+    # sees and can sideload directly, and Kodi's browse of the source URL shows
+    # it immediately (single-segment href) without descending into zips/. The
+    # copy under zips/repository.anchor/ stays for the repo's own self-update.
+    shutil.copyfile(os.path.join(ZIPS, "repository.anchor", repo_zip),
+                    os.path.join(OUT, repo_zip))
     root_body = (
         "<h1>Anchor Repository</h1>"
         "<p>Anchor - a Kodi playback companion. It plays a stream handed to it "
         "by a companion app and adds Trakt/Simkl scrobbling, a resume prompt "
         "and skip-intro. It does not browse, scrape or resolve anything.</p>"
-        "<p style=\"font-size:1.1em\"><b>&rarr; <a href=\"%s\">Download the Anchor "
-        "repository add-on</a></b> (<code>%s</code>)</p>"
+        "<p style=\"font-size:1.15em\"><b>&rarr; <a href=\"%s\">%s</a></b> "
+        "&mdash; the repository add-on (download, or point Kodi's file source at "
+        "this page).</p>"
         "<p><b>Install in Kodi:</b> Add-ons &rarr; <i>Install from zip file</i> "
-        "&rarr; the downloaded <code>%s</code>. Then Add-ons &rarr; "
-        "<i>Install from repository</i> &rarr; <b>Anchor Repository</b> &rarr; "
-        "install <b>Anchor</b> (it auto-updates afterwards). Or add this page's "
-        "URL as a file source and browse <a href=\"zips/\">zips/</a>.</p>"
+        "&rarr; the <code>%s</code> above. Then Add-ons &rarr; <i>Install from "
+        "repository</i> &rarr; <b>Anchor Repository</b> &rarr; install "
+        "<b>Anchor</b> (it auto-updates afterwards). If you add this page as a "
+        "file source, use the URL <b>with a trailing slash</b>.</p>"
         "<hr><p style=\"font-size:0.85em;color:#666;max-width:48em\">"
         "Anchor is an independent project and is <b>not affiliated with, "
         "endorsed by, or associated with</b> the Kodi/XBMC Foundation, Trakt, "
@@ -182,7 +189,7 @@ def main():
         "it only plays streams handed to it by a companion app. Do not use it "
         "for piracy or to access content you are not authorised to. "
         "Licensed under GPL-3.0-or-later.</p>"
-        % (dl, repo_zip, repo_zip))
+        % (repo_zip, repo_zip, repo_zip))
     write_dir_index(OUT, body=root_body)
     print("addons.xml md5: %s" % md5)
     print("Done. Serve docs/ via GitHub Pages.")
