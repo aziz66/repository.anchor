@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dev tooling
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Tests (pytest)
+        run: python -m pytest
+
+      # Generated-artifact staleness guard. docs/ is produced by build_pages.py
+      # and committed; a version bump that forgets to regenerate it would ship a
+      # stale Kodi repository (wrong addons.xml / missing zip) with nothing to
+      # detect it. Regenerate and fail if the committed docs/ differs.
+      - name: docs/ is in sync with the add-on sources
+        run: |
+          python3 build_pages.py
+          git diff --exit-code docs/
