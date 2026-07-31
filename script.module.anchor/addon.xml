@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="script.module.anchor"
        name="Anchor Library"
-       version="0.1.22"
+       version="0.1.23"
        provider-name="aziz66">
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
@@ -18,7 +18,8 @@
     <description lang="en_GB">Common library used by Anchor: Trakt and Simkl scrobbling (watch history and cross-device resume points), the shared scrobble gate, and IntroDB intro/recap timestamps for skip-intro. It ships no media, catalogs or stream sources.</description>
     <platform>all</platform>
     <license>GPL-3.0-or-later</license>
-    <news>v0.1.22 - Trakt/Simkl app credentials are now bring-your-own: the library embeds none and the using add-on binds them live from its settings via set_credentials(). configured() reflects whether the user has entered them.
+    <news>v0.1.23 - New icon.
+v0.1.22 - Trakt/Simkl app credentials are now bring-your-own: the library embeds none and the using add-on binds them live from its settings via set_credentials(). configured() reflects whether the user has entered them.
 v0.1.21 - Trakt and Simkl scrobbling clients with a shared scrobble gate, cross-device resume, and IntroDB intro/recap lookups. Trakt OAuth (authorize, device code, token refresh) uses auth.trakt.tv; a built-in Trakt app means no per-user setup. Robustness: a revoked Trakt token clears and flags re-authorization; the shared HTTP helper never raises on a truncated or non-UTF-8 response (IntroDB lookups made equally defensive). Works on boxes without script.module.requests (urllib fallback with an explicit User-Agent) and on Apple TV (tvOS).</news>
     <disclaimer lang="en_GB">Anchor is an independent project and is not affiliated with, endorsed by, or associated with the Kodi/XBMC Foundation, Trakt, Simkl or IntroDB. It ships no media, content or stream sources. Do not use it for piracy or to access content you are not authorised to.</disclaimer>
     <assets>

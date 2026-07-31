@@ -69,6 +69,9 @@
         <setting id="trakt_client_id" type="string" label="30040" help="30041">
           <level>0</level>
           <default></default>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
           <control type="edit" format="string">
             <heading>30040</heading>
           </control>
@@ -76,6 +79,9 @@
         <setting id="trakt_client_secret" type="string" label="30042" help="30041">
           <level>0</level>
           <default></default>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
           <control type="edit" format="string">
             <heading>30042</heading>
           </control>
@@ -106,6 +112,9 @@
         <setting id="simkl_client_id" type="string" label="30043" help="30044">
           <level>0</level>
           <default></default>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
           <control type="edit" format="string">
             <heading>30043</heading>
           </control>

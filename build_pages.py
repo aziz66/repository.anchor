@@ -167,6 +167,10 @@ def main():
     # sees and can sideload directly, and Kodi's browse of the source URL shows
     # it immediately (single-segment href) without descending into zips/. The
     # copy under zips/repository.anchor/ stays for the repo's own self-update.
+    for fn in os.listdir(OUT):   # drop any previous-version root copy
+        if (fn.startswith("repository.anchor-") and fn.endswith(".zip")
+                and fn != repo_zip):
+            os.remove(os.path.join(OUT, fn))
     shutil.copyfile(os.path.join(ZIPS, "repository.anchor", repo_zip),
                     os.path.join(OUT, repo_zip))
     root_body = (
