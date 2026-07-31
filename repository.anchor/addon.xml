@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="repository.anchor"
+       name="Anchor Repository"
+       version="1.0.2"
+       provider-name="aziz66">
+  <extension point="xbmc.addon.repository" name="Anchor Repository">
+    <dir>
+      <info compressed="false">https://aziz66.github.io/repository.anchor/addons.xml</info>
+      <checksum>https://aziz66.github.io/repository.anchor/addons.xml.md5</checksum>
+      <datadir zip="true">https://aziz66.github.io/repository.anchor/zips/</datadir>
+    </dir>
+  </extension>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en_GB">Anchor add-on repository</summary>
+    <description lang="en_GB">Installs and auto-updates Anchor and its shared support library. Anchor is a Kodi playback companion: it plays a stream handed to it by a companion app and adds Trakt/Simkl scrobbling, a resume prompt and skip-intro.</description>
+    <platform>all</platform>
+    <license>GPL-3.0-or-later</license>
+    <disclaimer lang="en_GB">Anchor is an independent project and is not affiliated with, endorsed by, or associated with the Kodi/XBMC Foundation, Trakt, Simkl or IntroDB. It ships no media, content or stream sources. Do not use it for piracy or to access content you are not authorised to.</disclaimer>
+    <assets>
+      <icon>icon.png</icon>
+    </assets>
+    <source>https://github.com/aziz66/repository.anchor</source>
+  </extension>
+</addon>

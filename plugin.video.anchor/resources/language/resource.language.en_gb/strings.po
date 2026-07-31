@@ -1,0 +1,146 @@
+# Kodi Media Center language file
+# Addon Name: Anchor
+# Addon id: plugin.video.anchor
+# Addon Provider: aziz66
+msgid ""
+msgstr ""
+"Project-Id-Version: Anchor\n"
+"Report-Msgid-Bugs-To: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: en_GB\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgctxt "#30000"
+msgid "General"
+msgstr ""
+
+msgctxt "#30003"
+msgid "Resume prompt"
+msgstr ""
+
+msgctxt "#30004"
+msgid "When a stream starts and Trakt or Simkl has a saved position, offer to resume from it."
+msgstr ""
+
+msgctxt "#30005"
+msgid "Resume prompt default"
+msgstr ""
+
+msgctxt "#30006"
+msgid "Which action the prompt takes if you do not press anything before it closes."
+msgstr ""
+
+msgctxt "#30007"
+msgid "Resume"
+msgstr ""
+
+msgctxt "#30008"
+msgid "Start from beginning"
+msgstr ""
+
+msgctxt "#30010"
+msgid "Playback"
+msgstr ""
+
+msgctxt "#30011"
+msgid "Prompt style"
+msgstr ""
+
+msgctxt "#30012"
+msgid "Minimal shows a small overlay in the corner; Classic uses Kodi's dialog."
+msgstr ""
+
+msgctxt "#30013"
+msgid "Minimal overlay"
+msgstr ""
+
+msgctxt "#30014"
+msgid "Classic dialog"
+msgstr ""
+
+msgctxt "#30015"
+msgid "Skip intro / recap"
+msgstr ""
+
+msgctxt "#30016"
+msgid "Use crowdsourced IntroDB timestamps to skip intros and recaps. When on, the show's IMDb id and the season/episode number are sent to api.introdb.app to look up those timestamps."
+msgstr ""
+
+msgctxt "#30017"
+msgid "Skip without asking"
+msgstr ""
+
+msgctxt "#30018"
+msgid "Skip silently. When off you get a prompt that skips anyway if you do not answer within 8 seconds."
+msgstr ""
+
+msgctxt "#30020"
+msgid "Trakt"
+msgstr ""
+
+msgctxt "#30021"
+msgid "Scrobble to Trakt"
+msgstr ""
+
+msgctxt "#30022"
+msgid "Report play, pause and stop to Trakt. Your resume position is stored there too, so the resume prompt needs Trakt or Simkl connected."
+msgstr ""
+
+msgctxt "#30023"
+msgid "Authorize Trakt"
+msgstr ""
+
+msgctxt "#30024"
+msgid "Sign out of Trakt"
+msgstr ""
+
+msgctxt "#30025"
+msgid "Simkl"
+msgstr ""
+
+msgctxt "#30026"
+msgid "Scrobble to Simkl"
+msgstr ""
+
+msgctxt "#30027"
+msgid "Report play, pause and stop to Simkl. You can use Simkl alongside Trakt: both are kept in step, and the resume prompt uses whichever you paused most recently."
+msgstr ""
+
+msgctxt "#30028"
+msgid "Authorize Simkl"
+msgstr ""
+
+msgctxt "#30029"
+msgid "Sign out of Simkl"
+msgstr ""
+
+msgctxt "#30040"
+msgid "Trakt Client ID"
+msgstr ""
+
+msgctxt "#30041"
+msgid "From your own Trakt app at app.trakt.tv/oauth/applications (Redirect URI: urn:ietf:wg:oauth:2.0:oob). Paste its Client ID and Secret here, then Authorize Trakt."
+msgstr ""
+
+msgctxt "#30042"
+msgid "Trakt Client Secret"
+msgstr ""
+
+msgctxt "#30043"
+msgid "Simkl Client ID"
+msgstr ""
+
+msgctxt "#30044"
+msgid "From your own Simkl app at simkl.com/settings/developer (Redirect URI: urn:ietf:wg:oauth:2.0:oob). Paste its Client ID here, then Authorize Simkl. No secret is needed."
+msgstr ""
+
+msgctxt "#30033"
+msgid "Clear cache"
+msgstr ""
+
+msgctxt "#30034"
+msgid "Drop cached IntroDB segments and the saved playback lists, then fetch fresh."
+msgstr ""
+

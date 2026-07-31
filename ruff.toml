@@ -1,0 +1,13 @@
+line-length = 100
+target-version = "py38"
+
+[lint]
+# Real-bug rules, not style pedantry: pyflakes (F), import order (I), pycodestyle
+# errors/warnings (E/W), bugbear (B), and blind-except (BLE) - the last one is
+# why every deliberate `except Exception` carries an explicit `# noqa: BLE001`.
+select = ["E", "F", "I", "W", "B", "BLE"]
+
+[lint.per-file-ignores]
+# Stubs deliberately model Kodi's loose API (unused args, catch-alls).
+"tests/stubs/*" = ["ARG", "B", "E501"]
+"tests/*" = ["E501"]

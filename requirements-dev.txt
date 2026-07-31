@@ -1,0 +1,3 @@
+# Dev/test tooling only - no runtime dependency is added to the add-on.
+pytest>=7.0
+ruff>=0.4
