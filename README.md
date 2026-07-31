@@ -35,8 +35,11 @@ The suite is two add-ons:
 ## Install (Kodi)
 
 1. **Settings → System → Add-ons →** enable **Unknown sources**.
-2. **Settings → File manager → Add source →** `https://aziz66.github.io/repository.anchor/` → name it `anchor`.
-3. **Add-ons → Install from zip file → `anchor` →** `zips/repository.anchor/` → the `repository.anchor-*.zip`.
+2. Get the repository zip — either download it directly:
+   **<https://aziz66.github.io/repository.anchor/repository.anchor-1.0.2.zip>**,
+   or **Settings → File manager → Add source →**
+   `https://aziz66.github.io/repository.anchor/` (**keep the trailing slash**) → name it `anchor`.
+3. **Add-ons → Install from zip file →** the downloaded zip (or the `anchor` source → `repository.anchor-*.zip`).
 4. **Add-ons → Install from repository → Anchor Repository →** install **Anchor**. It auto-updates from here afterwards.
 
 ## Connect a scrobbling service (bring your own app)
