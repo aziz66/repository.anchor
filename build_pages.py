@@ -42,21 +42,40 @@ def addon_version(addon_dir):
     return ET.parse(os.path.join(addon_dir, "addon.xml")).getroot().get("version")
 
 
+# Reproducible zips: every entry gets a FIXED timestamp, order and mode, so the
+# bytes depend only on file CONTENT - not on checkout mtimes or walk order. This
+# is what lets CI rebuild docs/ and byte-match the committed copy (the staleness
+# guard); a plain zf.write() bakes in each file's mtime and fails across machines.
+_ZIP_EPOCH = (1980, 1, 1, 0, 0, 0)   # zip minimum; stable across builds
+
+
+def _addon_files(addon_dir):
+    """(full_path, arcname) for every packaged file, in a deterministic order."""
+    out = []
+    for dirpath, dirnames, filenames in os.walk(addon_dir):
+        dirnames[:] = sorted(d for d in dirnames if d not in EXCLUDE_DIRS)
+        for fn in sorted(filenames):
+            if fn in EXCLUDE_NAMES or fn.endswith(EXCLUDE_SUFFIX):
+                continue
+            full = os.path.join(dirpath, fn)
+            out.append((full, os.path.relpath(full, SRC)))  # arcname: <id>/...
+    return sorted(out, key=lambda p: p[1])
+
+
 def zip_addon(addon_id):
     addon_dir = os.path.join(SRC, addon_id)
     version = addon_version(addon_dir)
     out_dir = os.path.join(ZIPS, addon_id)
     os.makedirs(out_dir, exist_ok=True)
     zip_path = os.path.join(out_dir, "%s-%s.zip" % (addon_id, version))
-    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
-        for dirpath, dirnames, filenames in os.walk(addon_dir):
-            dirnames[:] = [d for d in dirnames if d not in EXCLUDE_DIRS]
-            for fn in filenames:
-                if fn in EXCLUDE_NAMES or fn.endswith(EXCLUDE_SUFFIX):
-                    continue
-                full = os.path.join(dirpath, fn)
-                rel = os.path.relpath(full, SRC)  # arcname starts with <id>/
-                zf.write(full, rel)
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED,
+                         compresslevel=9) as zf:
+        for full, rel in _addon_files(addon_dir):
+            zi = zipfile.ZipInfo(rel, date_time=_ZIP_EPOCH)
+            zi.compress_type = zipfile.ZIP_DEFLATED
+            zi.external_attr = 0o644 << 16   # fixed mode, not the file's
+            with open(full, "rb") as fh:
+                zf.writestr(zi, fh.read())
     # drop stale version zips
     keep = os.path.basename(zip_path)
     for fn in os.listdir(out_dir):
