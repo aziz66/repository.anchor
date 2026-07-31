@@ -36,7 +36,7 @@ The suite is two add-ons:
 
 1. **Settings → System → Add-ons →** enable **Unknown sources**.
 2. Get the repository zip — either download it directly:
-   **<https://aziz66.github.io/repository.anchor/repository.anchor-1.0.2.zip>**,
+   **<https://aziz66.github.io/repository.anchor/repository.anchor-1.0.3.zip>**,
    or **Settings → File manager → Add source →**
    `https://aziz66.github.io/repository.anchor/` (**keep the trailing slash**) → name it `anchor`.
 3. **Add-ons → Install from zip file →** the downloaded zip (or the `anchor` source → `repository.anchor-*.zip`).
@@ -92,11 +92,12 @@ python3 build_pages.py     # writes docs/ (addons.xml, .md5, zips/, index.html)
 ```
 
 GitHub Pages serves `docs/` at the URL above. Bump an add-on's `addon.xml` version,
-re-run `build_pages.py`, commit `docs/`, and push.
+re-run `build_pages.py`, commit `docs/`, and push. `build_pages.py` writes
+reproducible zips, so CI can rebuild `docs/` and byte-match the committed copy.
 
-> **Trakt/Simkl app credentials** are embedded in the client. Trakt's device-code flow
-> requires the client secret to ship client-side (as it does in every Trakt-enabled Kodi
-> add-on), so it is public by necessity; keep it a dedicated app not reused elsewhere.
+> **No credentials are embedded.** Trakt/Simkl app credentials are bring-your-own —
+> each user registers their own app and enters it in Settings (see above), so the
+> source and the distributed zips contain no secrets.
 
 ---
 
