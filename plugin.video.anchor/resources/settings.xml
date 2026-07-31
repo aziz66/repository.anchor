@@ -89,8 +89,10 @@
         <setting id="trakt_auth" type="action" label="30023">
           <level>0</level>
           <data>RunPlugin(plugin://plugin.video.anchor/?action=trakt_auth)</data>
+          <!-- close=true so the dialog saves the just-typed id/secret BEFORE
+               the auth flow (a separate process) reads them from settings. -->
           <control type="button" format="action">
-            <close>false</close>
+            <close>true</close>
           </control>
         </setting>
         <setting id="trakt_logout" type="action" label="30024">
@@ -122,8 +124,10 @@
         <setting id="simkl_auth" type="action" label="30028">
           <level>0</level>
           <data>RunPlugin(plugin://plugin.video.anchor/?action=simkl_auth)</data>
+          <!-- close=true so the dialog saves the just-typed client id BEFORE
+               the auth flow (a separate process) reads it from settings. -->
           <control type="button" format="action">
-            <close>false</close>
+            <close>true</close>
           </control>
         </setting>
         <setting id="simkl_logout" type="action" label="30029">

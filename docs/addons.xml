@@ -54,7 +54,7 @@ v0.1.21 - Trakt and Simkl scrobbling clients with a shared scrobble gate, cross-
 </addon>
 <addon id="plugin.video.anchor"
        name="Anchor"
-       version="0.1.12"
+       version="0.1.13"
        provider-name="aziz66">
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
@@ -69,7 +69,8 @@ v0.1.21 - Trakt and Simkl scrobbling clients with a shared scrobble gate, cross-
     <description lang="en_GB">Anchor is the Kodi receiver for a companion app: the app resolves a stream and casts it to Kodi, and Anchor catches the cast with its IMDb id and metadata so Kodi shows the correct title and artwork, then scrobbles to Trakt and/or Simkl, offers a resume prompt, and skips intros/recaps via IntroDB. It does not browse, scrape or look up metadata - the app supplies it.</description>
     <platform>all</platform>
     <license>GPL-3.0-or-later</license>
-    <news>v0.1.12 - Fixes the Trakt/Simkl credential boxes not appearing in Settings (an editable text field needs an "allow empty" constraint to render, which was missing). New app icon.
+    <news>v0.1.13 - Authorize now works right after typing your Trakt/Simkl credentials: the Settings dialog saves the fields before the authorize step reads them, so you no longer have to close and reopen Settings first.
+v0.1.12 - Fixes the Trakt/Simkl credential boxes not appearing in Settings (an editable text field needs an "allow empty" constraint to render, which was missing). New app icon.
 v0.1.11 - Trakt and Simkl now use YOUR OWN app credentials (bring-your-own): create a free Trakt application and a free Simkl application, paste each Client ID (plus Trakt's Client Secret) into Settings, then Authorize. Nothing is shared or embedded, so no rate-limit or suspension is ever shared between users. See the README for the two-minute setup.
 v0.1.10 - Scrobble to Trakt and/or Simkl - connect either or both. Every play, pause and stop is sent to each connected service, and the resume prompt uses whichever service you paused most recently; "Start over" clears the saved position on all of them. An episode you advance past 90% is marked watched instead of being pinned just under the threshold; a manual stop records a fresher position; a died or interrupted stream keeps its resume point instead of being recorded as watched; a revoked Trakt sign-in prompts you to re-authorize instead of failing silently. Skip intro/recap via IntroDB, with a note on what it sends. Trakt sign-in uses the device-code flow. Bundles the GPL licence.</news>
     <disclaimer lang="en_GB">Anchor is an independent project and is not affiliated with, endorsed by, or associated with the Kodi/XBMC Foundation, Trakt, Simkl or IntroDB. It ships no media, content or stream sources - it only plays streams handed to it by a companion app. Do not use it for piracy or to access content you are not authorised to.</disclaimer>
