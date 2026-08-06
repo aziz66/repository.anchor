@@ -31,14 +31,27 @@ class Window:
         windows[self._id].pop(key, None)
 
 
+# Every InfoTag setter call, in order: {"setTitle": [("T",)], ...}. Cleared by
+# `reset()`. Recording rather than swallowing lets a test assert on the metadata
+# contract, which otherwise fails silently: a dropped field just looks like a
+# slightly emptier info screen.
+info_calls = {}
+
+
 class _InfoTag:
-    """Accepts any setX(...) call InfoTagVideo exposes."""
+    """Accepts any setX(...) call InfoTagVideo exposes, and records it."""
     def __getattr__(self, name):
-        return lambda *a, **k: None
+        def record(*a, **k):
+            info_calls.setdefault(name, []).append(a)
+        return record
 
 
 class ListItem:
+    #: The most recently constructed item, so a test can read back its art.
+    last = None
+
     def __init__(self, label="", label2="", path="", offscreen=False):
+        ListItem.last = self
         self.label = label
         self._path = path
         self._props = {}
@@ -61,6 +74,9 @@ class ListItem:
 
     def setArt(self, art):
         self._art = dict(art)
+
+    def getArt(self, key=None):
+        return self._art if key is None else self._art.get(key, "")
 
     def setInfo(self, *a, **k):
         pass
@@ -119,3 +135,9 @@ class _Control:
 ControlButton = object
 ControlImage = object
 ControlLabel = object
+
+
+def reset():
+    """Forget recorded InfoTag calls and the last ListItem, between tests."""
+    info_calls.clear()
+    ListItem.last = None
