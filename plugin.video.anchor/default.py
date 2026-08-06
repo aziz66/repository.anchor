@@ -12,6 +12,7 @@ presentation layer (routing, ListItems, dialogs).
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 from urllib.parse import parse_qsl, unquote, urlencode, urlparse
@@ -79,13 +80,109 @@ def _clear_stash():
 # Playback - the one entry point that matters
 # ---------------------------------------------------------------------------
 
+def _parse_meta(raw):
+    """Decode the `meta` JSON param. Malformed input is ignored, never fatal:
+    a cast must still play when the metadata is broken."""
+    if not raw:
+        return {}
+    try:
+        obj = json.loads(raw)
+        return obj if isinstance(obj, dict) else {}
+    except (ValueError, TypeError):
+        xbmc.log("[anchor] meta param was not valid JSON, ignoring",
+                 xbmc.LOGWARNING)
+        return {}
+
+
+def _actors(entries):
+    """[{name, role, thumbnail, order}] -> [xbmc.Actor]. Kodi 20+ only."""
+    out = []
+    for i, e in enumerate(entries or []):
+        if isinstance(e, str):
+            e = {"name": e}
+        if not isinstance(e, dict) or not e.get("name"):
+            continue
+        try:
+            out.append(xbmc.Actor(e["name"], e.get("role", "") or "",
+                                  int(e.get("order", i)), e.get("thumbnail", "") or ""))
+        except (AttributeError, TypeError, ValueError):
+            return []          # older Kodi without xbmc.Actor: skip cast entirely
+    return out
+
+
+def _apply_info(tag, info):
+    """Map Kodi-vocabulary keys onto InfoTagVideo setters.
+
+    One table instead of a hand-written if-ladder: adding a field upstream in the
+    app becomes a no-op here once its key is listed, and anything unrecognised is
+    ignored rather than raising. Every setter is wrapped because InfoTag setters
+    differ across Kodi versions and one missing method must not stop playback.
+    """
+    def _f(v):
+        try:
+            return float(v)
+        except (TypeError, ValueError):
+            return None
+
+    def _list(v):
+        if isinstance(v, (list, tuple)):
+            return [str(x).strip() for x in v if str(x).strip()]
+        return [p.strip() for p in str(v).split(",") if p.strip()]
+
+    setters = {
+        "title": lambda v: tag.setTitle(str(v)),
+        "originaltitle": lambda v: tag.setOriginalTitle(str(v)),
+        "tvshowtitle": lambda v: tag.setTvShowTitle(str(v)),
+        "plot": lambda v: tag.setPlot(str(v)),
+        "plotoutline": lambda v: tag.setPlotOutline(str(v)),
+        "tagline": lambda v: tag.setTagLine(str(v)),
+        "year": lambda v: tag.setYear(int(v)),
+        "season": lambda v: tag.setSeason(int(v)),
+        "episode": lambda v: tag.setEpisode(int(v)),
+        "duration": lambda v: tag.setDuration(int(v)),          # SECONDS
+        "mpaa": lambda v: tag.setMpaa(str(v)),
+        "premiered": lambda v: tag.setPremiered(str(v)[:10]),   # YYYY-MM-DD
+        "genre": lambda v: tag.setGenres(_list(v)),
+        "studio": lambda v: tag.setStudios(_list(v)),
+        "country": lambda v: tag.setCountries(_list(v)),
+        "director": lambda v: tag.setDirectors(_list(v)),
+        "writer": lambda v: tag.setWriters(_list(v)),
+        "rating": lambda v: tag.setRating(_f(v), 0, "imdb", True),
+        "userrating": lambda v: tag.setUserRating(int(v)),
+        "trailer": lambda v: tag.setTrailer(str(v)),
+        "cast": lambda v: tag.setCast(_actors(v)),
+    }
+    for key, value in info.items():
+        if value in (None, "", []):
+            continue
+        fn = setters.get(key)
+        if not fn:
+            continue                                  # forward compatibility
+        try:
+            fn(value)
+        except Exception as exc:                      # noqa: BLE001
+            xbmc.log("[anchor] could not set %s: %s" % (key, exc),
+                     xbmc.LOGWARNING)
+
+
 def play_url(params):
     """Play an ALREADY-resolved external stream that carries its own identity.
 
     The app hands us the resolved stream ``url`` plus the identity
-    (``imdb`` / ``type`` / ``season`` / ``episode``) and the display metadata
-    (``title``/``year``/``plot``/``poster``/``fanart``/``genre``/``show``).
+    (``imdb`` / ``type`` / ``season`` / ``episode``) and display metadata.
     Whatever the app omits stays blank - Anchor performs no metadata lookups.
+
+    Display metadata arrives two ways, and both are honoured:
+
+    * **Flat params** - the original contract
+      (``title``/``year``/``plot``/``genre``/``show``/``poster``/``fanart``).
+    * **``meta``** - one percent-encoded JSON object keyed by KODI's own
+      vocabulary (``rating``, ``duration``, ``mpaa``, ``premiered``, ``studio``,
+      ``director``, ``writer``, ``cast``, ``art{...}``, ...). Unknown keys are
+      ignored, so the app can send a field before Anchor learns it, and an older
+      Anchor keeps working against a newer app.
+
+    ``meta`` wins where the two overlap: it is the newer, richer channel.
     """
     url = params.get("url")
     if not url:
@@ -117,32 +214,42 @@ def play_url(params):
     li.setProperty("IsPlayable", "true")
     li.setContentLookup(False)  # skip Kodi's HEAD probe (breaks some servers)
 
-    tag = li.getVideoInfoTag()
-    tag.setMediaType("episode" if ctype == "series" else "movie")
-    if params.get("title"):
-        tag.setTitle(params["title"])
-    if params.get("plot"):
-        tag.setPlot(params["plot"])
-    if _i(params.get("year")) is not None:
-        tag.setYear(_i(params["year"]))
-    if params.get("genre"):
-        tag.setGenres([g.strip() for g in params["genre"].split(",") if g.strip()])
-    if imdb.startswith("tt"):
-        tag.setUniqueIDs({"imdb": imdb}, "imdb")
-        tag.setIMDBNumber(imdb)
+    # The flat params are the base layer; `meta` (JSON) overlays it. Building one
+    # dict first means the two channels can never disagree about what was set.
+    meta = _parse_meta(params.get("meta"))
+    info = {
+        "title": params.get("title"),
+        "plot": params.get("plot"),
+        "year": params.get("year"),
+        "genre": params.get("genre"),
+    }
     if ctype == "series":
-        if params.get("show"):
-            tag.setTvShowTitle(params["show"])
-        if _i(season) is not None:
-            tag.setSeason(_i(season))
-        if _i(episode) is not None:
-            tag.setEpisode(_i(episode))
+        info["tvshowtitle"] = params.get("show")
+        info["season"] = season
+        info["episode"] = episode
+    info.update({k: v for k, v in meta.items() if k != "art" and v not in (None, "", [])})
 
     art = {}
     if params.get("poster"):
-        art["poster"] = art["thumb"] = params["poster"]
+        art["poster"] = params["poster"]
     if params.get("fanart"):
         art["fanart"] = params["fanart"]
+    # `thumb` used to be aliased to the poster unconditionally, which silently
+    # discarded an episode still the app supplied. Alias only as a FALLBACK.
+    if params.get("thumb"):
+        art["thumb"] = params["thumb"]
+    for k, v in (meta.get("art") or {}).items():
+        if isinstance(v, str) and v:
+            art[k] = v
+    if "thumb" not in art and art.get("poster"):
+        art["thumb"] = art["poster"]
+
+    tag = li.getVideoInfoTag()
+    tag.setMediaType("episode" if ctype == "series" else "movie")
+    _apply_info(tag, info)
+    if imdb.startswith("tt"):
+        tag.setUniqueIDs({"imdb": imdb}, "imdb")
+        tag.setIMDBNumber(imdb)
     if art:
         li.setArt(art)
 
