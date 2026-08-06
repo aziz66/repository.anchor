@@ -54,7 +54,7 @@ v0.1.21 - Trakt and Simkl scrobbling clients with a shared scrobble gate, cross-
 </addon>
 <addon id="plugin.video.anchor"
        name="Anchor"
-       version="0.1.13"
+       version="0.1.14"
        provider-name="aziz66">
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
