@@ -58,3 +58,13 @@ def getInfoLabel(*args, **kwargs):
 
 def sleep(ms):
     pass
+
+
+class Actor:
+    """xbmc.Actor (Kodi 20+), used by InfoTagVideo.setCast."""
+
+    def __init__(self, name="", role="", order=0, thumbnail=""):
+        self.name = name
+        self.role = role
+        self.order = order
+        self.thumbnail = thumbnail
