@@ -70,6 +70,25 @@ def test_bad_input_degrades_and_never_raises():
     assert "setDuration" not in xbmcgui.info_calls, "unparsable value skipped, not fatal"
 
 
+def test_a_non_dict_art_does_not_stop_playback():
+    """Broken metadata must degrade, never raise: `art` as a list or a string used to escape
+    play_url entirely, so the cast never resolved."""
+    for broken in (["http://x.jpg"], "http://x.jpg", 7):
+        art = _play(type="movie", imdb="tt7", poster="http://p.jpg",
+                    meta=json.dumps({"art": broken}))
+        assert art.get("poster") == "http://p.jpg", "the flat art survives a broken meta.art"
+
+
+def test_one_bad_cast_entry_does_not_discard_the_others():
+    """A single unusable entry used to return [], costing the user every actor."""
+    _play(type="movie", imdb="tt8", meta=json.dumps({"cast": [
+        {"name": "Good"}, {"name": "Bad", "order": "not-a-number"},
+        {"name": "AlsoGood", "order": None}, {"no_name": 1}, "PlainString",
+    ]}))
+    actors = xbmcgui.info_calls.get("setCast", [([],)])[0][0]
+    assert [a.name for a in actors] == ["Good", "Bad", "AlsoGood", "PlainString"]
+
+
 def test_meta_wins_where_it_overlaps_a_flat_param():
     _play(type="movie", imdb="tt6", title="Flat",
           meta=json.dumps({"title": "FromMeta"}))

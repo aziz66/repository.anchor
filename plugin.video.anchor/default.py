@@ -95,7 +95,14 @@ def _parse_meta(raw):
 
 
 def _actors(entries):
-    """[{name, role, thumbnail, order}] -> [xbmc.Actor]. Kodi 20+ only."""
+    """[{name, role, thumbnail, order}] -> [xbmc.Actor]. Kodi 20+ only.
+
+    A malformed ENTRY is skipped; only a missing `xbmc.Actor` (Kodi 19 and older) abandons the
+    whole list. These used to share one handler, so a single bad `order` silently cost the user
+    every actor.
+    """
+    if not hasattr(xbmc, "Actor"):
+        return []
     out = []
     for i, e in enumerate(entries or []):
         if isinstance(e, str):
@@ -103,10 +110,15 @@ def _actors(entries):
         if not isinstance(e, dict) or not e.get("name"):
             continue
         try:
+            order = e.get("order", i)
+            order = int(order) if order is not None else i
+        except (TypeError, ValueError):
+            order = i
+        try:
             out.append(xbmc.Actor(e["name"], e.get("role", "") or "",
-                                  int(e.get("order", i)), e.get("thumbnail", "") or ""))
-        except (AttributeError, TypeError, ValueError):
-            return []          # older Kodi without xbmc.Actor: skip cast entirely
+                                  order, e.get("thumbnail", "") or ""))
+        except (TypeError, ValueError):
+            continue           # one unusable entry must not cost the rest
     return out
 
 
@@ -238,9 +250,13 @@ def play_url(params):
     # discarded an episode still the app supplied. Alias only as a FALLBACK.
     if params.get("thumb"):
         art["thumb"] = params["thumb"]
-    for k, v in (meta.get("art") or {}).items():
-        if isinstance(v, str) and v:
-            art[k] = v
+    # isinstance, not `or {}`: a non-dict `art` (a list, a string) raised out of play_url and the
+    # cast never resolved, contradicting this module's rule that broken metadata must still play.
+    meta_art = meta.get("art")
+    if isinstance(meta_art, dict):
+        for k, v in meta_art.items():
+            if isinstance(v, str) and v:
+                art[k] = v
     if "thumb" not in art and art.get("poster"):
         art["thumb"] = art["poster"]
 
