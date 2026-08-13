@@ -112,6 +112,7 @@ class Scrobbler(xbmc.Player):
     def __init__(self):
         super().__init__()
         self.cid = None              # playing item's id (tt.. / tt..:S:E)
+        self._cid_file = None        # the file self.cid was resolved for
         self.ctype = None
         self.scrobble_on = False     # any connected service wants this item
         self.progress = 0.0          # percent
@@ -166,6 +167,31 @@ class Scrobbler(xbmc.Player):
 
     # -- position -----------------------------------------------------------
 
+    def _current_file(self):
+        try:
+            return (self.getPlayingFile() or "").split("|")[0]
+        except Exception:  # noqa: BLE001 - invalid once fully stopped
+            return ""
+
+    def _moved_on(self):
+        """True when the player is now on a DIFFERENT file than the one
+        self.cid was resolved for.
+
+        On a Kodi playlist auto-advance (the companion app pre-queues the next
+        episode + autoplaynextitem), Kodi opens the next item BEFORE it delivers
+        this item's onPlayBackEnded, so getTime()/getTotalTime() already answer
+        for the next episode. Reading them here scores the finished episode
+        against a few seconds of the next one - it looks like a died stream and
+        gets stop@~1%, unwatched and with its resume point overwritten. Pinning
+        to the resolved file lets the position read be refused once the player
+        has demonstrably moved on. An empty current file (player torn down, e.g.
+        a clean manual stop or an immediate death) is NOT "moved on".
+        """
+        if not self._cid_file:
+            return False
+        cur = self._current_file()
+        return bool(cur) and cur != self._cid_file
+
     def _pct(self):
         try:
             total = self.getTotalTime()
@@ -186,6 +212,10 @@ class Scrobbler(xbmc.Player):
         stale (often zero) values the died-stream guard has to judge on.
         Keeps the previous values if the player can no longer answer.
         """
+        if self._moved_on():
+            # The player has advanced to the next item; its position is not
+            # self.cid's. Keep self.cid's last in-play sample untouched.
+            return
         try:
             total = self.getTotalTime()
             cur = self.getTime()
@@ -411,6 +441,11 @@ class Scrobbler(xbmc.Player):
     def _begin(self, ctype, cid):
         self.ctype = ctype or ("series" if cid.count(":") >= 2 else "movie")
         self.cid = cid
+        # Bind the id to the file it was resolved for, so a position read can be
+        # refused once a playlist auto-advance opens the next item (_moved_on).
+        # Prefer the live player; fall back to the stash the resolve wrote.
+        self._cid_file = self._current_file() \
+            or (HOME.getProperty(PROP + "playing_file") or "").split("|")[0]
         self._abnormal_stop = False
         self._eof_midstream = False
         # Reset BEFORE _pct(): it falls back to self.progress when the player
@@ -485,6 +520,7 @@ class Scrobbler(xbmc.Player):
         self.scrobble_on = False
         self._pending_start = False  # never open a session for a stopped item
         self.cid = None
+        self._cid_file = None
         self.progress = 0.0          # never seed the next item's _pct fallback
         self._eof_midstream = False  # consumed - never leak into the next stop
 
@@ -509,6 +545,7 @@ class Scrobbler(xbmc.Player):
             self._seg_done = set()
             self._seg_fetch = False
             self._pending_start = False
+            self._cid_file = None
             self.progress = 0.0
             self.cur_time = self.cur_total = 0.0
             return
@@ -543,12 +580,24 @@ class Scrobbler(xbmc.Player):
         # Kodi reports a mid-stream NETWORK death as this same "ended" event
         # (a stalled HTTP source returns eof), so "ended" alone cannot be
         # trusted to mean "watched to the credits".
-        # Take a fresh reading first: cur_time/cur_total are only refreshed by
-        # the run loop's _snap, which can be up to ~20s stale (5s idle tick,
-        # plus a blocking resume prompt and the IntroDB fetch ahead of it). A
-        # stream that dies in the opening seconds has never been snapped, so
-        # both are still 0 - and "0 < 0" would read as a clean finish.
-        self._snap_position()
+        if self._moved_on():
+            # Playlist auto-advance: Kodi already opened the NEXT item before
+            # queuing this callback, so a position read now describes it, not
+            # self.cid. Judge self.cid on its last in-play sample (the run loop
+            # samples every 5s, so a genuinely finished episode sits >=90%);
+            # _snap_position() would refuse the moved-on read anyway, but the
+            # explicit skip keeps this branch's intent - and its log - clear.
+            xbmc.log("[anchor] ended via auto-advance (player already on the "
+                     "next file) - scoring %s on its last sampled %.0f%%, not "
+                     "the next item's position" % (self.cid, self.progress),
+                     xbmc.LOGINFO)
+        else:
+            # Take a fresh reading first: cur_time/cur_total are only refreshed
+            # by the run loop's _snap, which can be up to ~20s stale (5s idle
+            # tick, plus a blocking resume prompt and the IntroDB fetch ahead of
+            # it). A stream that dies in the opening seconds has never been
+            # snapped, so both are still 0 - and "0 < 0" reads as a clean finish.
+            self._snap_position()
         if self.cur_total <= 0 or self.cur_time <= 0:
             # No position data at all: we cannot show this played to the end,
             # and a dead link typically dies immediately. Treat as abnormal -

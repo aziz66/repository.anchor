@@ -103,8 +103,13 @@ def _actors(entries):
     """
     if not hasattr(xbmc, "Actor"):
         return []
+    if not isinstance(entries, (list, tuple)):
+        # A non-list cast (a bare string, a dict) is malformed input. Ignore it
+        # rather than iterating it: enumerate("Tom Hanks") would otherwise yield
+        # one actor per CHARACTER. Same degrade-safe rule as _parse_meta / art.
+        return []
     out = []
-    for i, e in enumerate(entries or []):
+    for i, e in enumerate(entries):
         if isinstance(e, str):
             e = {"name": e}
         if not isinstance(e, dict) or not e.get("name"):
@@ -239,7 +244,13 @@ def play_url(params):
         info["tvshowtitle"] = params.get("show")
         info["season"] = season
         info["episode"] = episode
-    info.update({k: v for k, v in meta.items() if k != "art" and v not in (None, "", [])})
+    # `art` is applied separately below. `season`/`episode` are the SCROBBLE
+    # identity (they build content_id above and are read by the resident service
+    # from the flat params) - taking them from meta could show Kodi an episode
+    # the service never scrobbles, so the flat identity always wins for those.
+    _meta_skip = {"art", "season", "episode"}
+    info.update({k: v for k, v in meta.items()
+                 if k not in _meta_skip and v not in (None, "", [])})
 
     art = {}
     if params.get("poster"):

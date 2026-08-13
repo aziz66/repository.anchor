@@ -93,3 +93,23 @@ def test_meta_wins_where_it_overlaps_a_flat_param():
     _play(type="movie", imdb="tt6", title="Flat",
           meta=json.dumps({"title": "FromMeta"}))
     assert xbmcgui.info_calls.get("setTitle") == [("FromMeta",)]
+
+
+def test_a_string_cast_is_ignored_not_split_into_characters():
+    """A non-list `cast` is malformed input. It must be dropped, not iterated:
+    enumerate('Tom Hanks') would otherwise make one actor per character."""
+    _play(type="movie", imdb="tt10", meta=json.dumps({"cast": "Tom Hanks"}))
+    actors = xbmcgui.info_calls.get("setCast", [([],)])[0][0]
+    assert actors == [], "a string cast yields no actors, not one per letter"
+
+
+def test_meta_cannot_override_the_scrobble_identity():
+    """season/episode build the id the resident service scrobbles, and it reads
+    them from the flat params - so meta must never change them, or Kodi would
+    show an episode the service never reports. Other meta fields still overlay."""
+    _play(type="series", imdb="tt11", season="1", episode="2",
+          meta=json.dumps({"season": 9, "episode": 9, "year": 2020}))
+    calls = xbmcgui.info_calls
+    assert calls.get("setSeason") == [(1,)], "flat season wins over meta"
+    assert calls.get("setEpisode") == [(2,)], "flat episode wins over meta"
+    assert calls.get("setYear") == [(2020,)], "a non-identity meta field still applies"
