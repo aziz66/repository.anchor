@@ -210,10 +210,17 @@ def play_url(params):
              in ("tv", "series", "episode") else "movie")
 
     # Identity: `imdb` may be a bare tt.. or the full tt..:season:episode.
+    # The packed form WINS when present (the cast contract): a separate
+    # season/episode param is only a fallback - incl. when the packed slot is
+    # empty. The reverse (flat param winning) let a stray season= override the
+    # packed id and scrobble the wrong episode.
     bits = (params.get("imdb") or "").strip().split(":")
     imdb = bits[0]
-    season = params.get("season") or (bits[1] if len(bits) > 2 else None)
-    episode = params.get("episode") or (bits[2] if len(bits) > 2 else None)
+    season = params.get("season")
+    episode = params.get("episode")
+    if len(bits) > 2:
+        season = bits[1] or season
+        episode = bits[2] or episode
 
     def _i(v):
         try:
@@ -311,7 +318,14 @@ def view_root():
     rows = []
     for name, mod, display in sync.BACKENDS:
         if hasattr(mod, "configured") and not mod.configured():
-            continue          # no usable app credentials in this build
+            # No usable app credentials in this build. If a token is still on
+            # disk from when it WAS configured, offer sign-out so it can be
+            # cleared - otherwise it lingers with no way to remove it from the
+            # menu. With no token, skip the backend entirely.
+            if mod.is_authorized():
+                rows.append(("Sign out of %s (credentials removed)" % display,
+                             name + "_logout"))
+            continue
         if mod.is_authorized():
             rows.append(("%s: [COLOR lime]signed in[/COLOR]" % display,
                          name + "_auth"))

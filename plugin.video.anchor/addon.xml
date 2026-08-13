@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.anchor"
        name="Anchor"
-       version="0.1.16"
+       version="0.1.17"
        provider-name="aziz66">
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
-    <import addon="script.module.anchor" version="0.1.23"/>
+    <import addon="script.module.anchor" version="0.1.24"/>
   </requires>
   <extension point="xbmc.python.pluginsource" library="default.py">
     <provides>video</provides>
@@ -16,7 +16,8 @@
     <description lang="en_GB">Anchor is the Kodi receiver for a companion app: the app resolves a stream and casts it to Kodi, and Anchor catches the cast with its IMDb id and metadata so Kodi shows the correct title and artwork, then scrobbles to Trakt and/or Simkl, offers a resume prompt, and skips intros/recaps via IntroDB. It does not browse, scrape or look up metadata - the app supplies it.</description>
     <platform>all</platform>
     <license>GPL-3.0-or-later</license>
-    <news>v0.1.16 - Fixes a bug where auto-playing the next episode could leave the one you just finished marked unwatched and reset its resume point: on a playlist advance Kodi opens the next episode before telling the add-on the last one ended, so Anchor was reading the new episode's position by mistake. Anchor now pins each stream to its own file and ignores a position reading once the player has moved on. Also hardens the cast metadata: a malformed cast list can no longer be mis-split, and the season/episode shown always match what is scrobbled.
+    <news>v0.1.17 - When a stream id carries the episode inline (tt..:season:episode), that packed episode now always wins over a separate season/episode value, so a mismatched parameter can no longer scrobble the wrong episode. If you remove a service's credentials while still signed in, a "Sign out" row now stays in the menu so its saved login can be cleared.
+v0.1.16 - Fixes a bug where auto-playing the next episode could leave the one you just finished marked unwatched and reset its resume point: on a playlist advance Kodi opens the next episode before telling the add-on the last one ended, so Anchor was reading the new episode's position by mistake. Anchor now pins each stream to its own file and ignores a position reading once the player has moved on. Also hardens the cast metadata: a malformed cast list can no longer be mis-split, and the season/episode shown always match what is scrobbled.
 v0.1.13 - Authorize now works right after typing your Trakt/Simkl credentials: the Settings dialog saves the fields before the authorize step reads them, so you no longer have to close and reopen Settings first.
 v0.1.12 - Fixes the Trakt/Simkl credential boxes not appearing in Settings (an editable text field needs an "allow empty" constraint to render, which was missing). New app icon.
 v0.1.11 - Trakt and Simkl now use YOUR OWN app credentials (bring-your-own): create a free Trakt application and a free Simkl application, paste each Client ID (plus Trakt's Client Secret) into Settings, then Authorize. Nothing is shared or embedded, so no rate-limit or suspension is ever shared between users. See the README for the two-minute setup.

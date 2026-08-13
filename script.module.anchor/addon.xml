@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="script.module.anchor"
        name="Anchor Library"
-       version="0.1.23"
+       version="0.1.24"
        provider-name="aziz66">
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
