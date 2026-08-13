@@ -25,5 +25,8 @@ env/
 .DS_Store
 Thumbs.db
 
-# Local working brief (not part of the published add-on)
+# Local working brief / maintainer ops doc (not part of the published add-on,
+# and kept out of the public repo: it names the build host, LAN IP and device).
 AGENT-READINESS.md
+anchor.md
+AGENTS.md

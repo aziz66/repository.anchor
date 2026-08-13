@@ -2,8 +2,9 @@
 
 Records in-progress playback ("currently watching") and watch history on Trakt.
 Content ids are IMDB (``tt...``), which Trakt accepts directly, so no TMDB
-lookup is needed. Tokens are stored 0600 in the add-on profile; the built-in
-app credentials are embedded below.
+lookup is needed. Tokens are stored 0600 in the add-on profile. App credentials
+are bring-your-own: nothing is embedded here (see set_credentials below); the
+using add-on binds live getters from its own settings.
 """
 
 from __future__ import annotations
