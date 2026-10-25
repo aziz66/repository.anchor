@@ -72,6 +72,7 @@ missing, it resolves failure and does nothing else.
 | `fanart` | – | Fanart/background image URL. |
 | `genre` | – | Comma-separated genres. |
 | `show` | – | Series title (episodes only). |
+| `live` | – | `1` marks a live IPTV stream (see below). Optional: the Xtream live shape is also detected. Send it only for live streams: a flagged stream reconnects when it ends, so a flagged VOD would replay from the start and can't be seeked. |
 
 Anything omitted stays blank — Anchor performs **no** metadata lookups.
 
@@ -85,6 +86,13 @@ Anything omitted stays blank — Anchor performs **no** metadata lookups.
   `default.py` **clears** the identity stash rather than leaving the previous
   item's identity live — otherwise the service would keep scrobbling the last
   movie against the new stream. Nothing is scrobbled for an id-less cast.
+- **Live IPTV.** A cast flagged `live=1`, or an id-less cast whose URL has the
+  Xtream live shape `[/live]/<user>/<pass>/<digits>.ts`, plays through
+  `inputstream.ffmpegdirect` with FFmpeg's reconnect options, so a provider
+  closing the connection reconnects instead of ending playback (Kodi's own HTTP
+  stack resumes by byte range, which a live server can't honour). HLS (`.m3u8`)
+  is never rerouted. Without that add-on installed and enabled, the cast plays as
+  before, and Anchor offers to install it (or asks to enable it) once per Kodi session.
 - **Release name.** The stash records the release filename parsed from the tail
   of `url` (debrid URLs end with it) when it looks more specific than `title`;
   kept for diagnostics/release-aware tooling.

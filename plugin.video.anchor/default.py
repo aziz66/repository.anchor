@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 from urllib.parse import parse_qsl, unquote, urlencode, urlparse
 
@@ -182,6 +183,85 @@ def _apply_info(tag, info):
                      xbmc.LOGWARNING)
 
 
+# Live IPTV: a raw, endless MPEG-TS from an Xtream-style panel. Kodi's own curl
+# path cannot survive the provider closing the connection (it does, roughly
+# hourly): CCurlFile always reconnects as a byte-range resume, the live server
+# can't honour the range (curl error 33), and playback ends. FFmpeg's HTTP layer
+# can reconnect from scratch instead, so these casts go through
+# inputstream.ffmpegdirect opened with AVFormat. `seekable=0` is load-bearing:
+# it keeps FFmpeg in streamed mode, where a reconnect targets offset 0 and sends
+# NO Range header. Otherwise a server advertising Accept-Ranges/Content-Range
+# flips it seekable and it range-resumes at the current offset, like curl.
+FFMPEGDIRECT = "inputstream.ffmpegdirect"
+# reconnect_delay_max=8 -> retries after 0s, 1s, 3s and 7s (~11s of backoff).
+# ffmpegdirect aborts any read after 20s, which ends playback exactly like
+# exhausting the retries, so the cap should use that window, not stay clear of
+# it: a panel that refuses the reconnect for a few seconds (still counting the
+# dropped connection) gets a fourth try. Connect time also counts toward the 20s.
+_LIVE_OPTS = ("seekable=0&reconnect=1&reconnect_streamed=1"
+              "&reconnect_at_eof=1&reconnect_delay_max=8")
+_XTREAM_LIVE = re.compile(r"^(?:/live)?/[^/]+/[^/]+/\d+\.ts$", re.IGNORECASE)
+
+
+def _is_live_iptv(params, url, has_id):
+    """Conservative: VOD, debrid and Stremio casts must keep Kodi's own path.
+
+    An explicit ``live=1`` from the app wins; otherwise only the Xtream live
+    shape ``[/live]/<user>/<pass>/<digits>.ts`` on an id-less cast qualifies (a
+    cast carrying an IMDb id is VOD by definition). HLS is left to Kodi's own
+    demuxer, which already re-fetches its playlist.
+    """
+    path = urlparse(url.split("|")[0]).path
+    if path.lower().endswith(".m3u8"):
+        return False
+    if str(params.get("live") or "").lower() in ("1", "true", "yes"):
+        return True
+    return not has_id and bool(_XTREAM_LIVE.match(path))
+
+
+def _route_live(li, url):
+    """Send a live IPTV cast through ffmpegdirect with FFmpeg's reconnect
+    options and return True. Without the add-on, play it exactly as before and
+    return False - a missing optional add-on must never cost the user playback.
+    Reconnect covers a provider CLOSING the connection; a stall or an outage
+    longer than ffmpegdirect's 20s read timeout still ends playback."""
+    # AddonIsEnabled, not HasAddon: HasAddon is true for a DISABLED add-on.
+    # Kodi would skip it and fall back to its curl path, which then sends the
+    # reconnect options as bogus HTTP headers.
+    if not xbmc.getCondVisibility("System.AddonIsEnabled(%s)" % FFMPEGDIRECT):
+        xbmc.log("[anchor] live IPTV cast but %s is not enabled: a provider "
+                 "drop will end playback" % FFMPEGDIRECT, xbmc.LOGWARNING)
+        return False
+    li.setProperty("inputstream", FFMPEGDIRECT)
+    li.setProperty(FFMPEGDIRECT + ".is_realtime_stream", "true")
+    # Default open mode for a non-HLS stream is curl, i.e. Kodi's CCurlFile -
+    # the very path that fails. stream_mode is left unset: absent = plain live.
+    li.setProperty(FFMPEGDIRECT + ".open_mode", "ffmpeg")
+    # Existing |headers (User-Agent etc.) are kept; ffmpegdirect forwards both.
+    li.setPath(url + ("&" if "|" in url else "|") + _LIVE_OPTS)
+    if urlparse(url.split("|")[0]).path.lower().endswith(".ts"):
+        li.setMimeType("video/mp2t")
+    xbmc.log("[anchor] live IPTV cast routed through %s (reconnect on drop)"
+             % FFMPEGDIRECT, xbmc.LOGINFO)
+    return True
+
+
+def _offer_ffmpegdirect():
+    """Once per Kodi session, point the user at the add-on a live cast needed.
+
+    Runs AFTER setResolvedUrl so the cast is never held up. Not installed ->
+    Kodi's own InstallAddon confirmation (it lists in the official repo);
+    installed but disabled -> a notification, since InstallAddon can't enable.
+    """
+    if HOME.getProperty(PROP + "ffmpegdirect_offered"):
+        return
+    HOME.setProperty(PROP + "ffmpegdirect_offered", "1")
+    if xbmc.getCondVisibility("System.HasAddon(%s)" % FFMPEGDIRECT):
+        notify("Enable Inputstream FFmpeg Direct so live channels survive drops")
+    else:
+        xbmc.executebuiltin("InstallAddon(%s)" % FFMPEGDIRECT)
+
+
 def play_url(params):
     """Play an ALREADY-resolved external stream that carries its own identity.
 
@@ -237,6 +317,8 @@ def play_url(params):
     li.setPath(url)
     li.setProperty("IsPlayable", "true")
     li.setContentLookup(False)  # skip Kodi's HEAD probe (breaks some servers)
+    needs_ffmpegdirect = (_is_live_iptv(params, url, imdb.startswith("tt"))
+                          and not _route_live(li, url))
 
     # The flat params are the base layer; `meta` (JSON) overlays it. Building one
     # dict first means the two channels can never disagree about what was set.
@@ -306,6 +388,8 @@ def play_url(params):
         _clear_stash()
 
     xbmcplugin.setResolvedUrl(HANDLE, True, li)
+    if needs_ffmpegdirect:
+        _offer_ffmpegdirect()
 
 
 # ---------------------------------------------------------------------------

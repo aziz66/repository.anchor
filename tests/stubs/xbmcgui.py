@@ -56,6 +56,7 @@ class ListItem:
         self._path = path
         self._props = {}
         self._art = {}
+        self.mimetype = ""
 
     def setPath(self, path):
         self._path = path
@@ -71,6 +72,9 @@ class ListItem:
 
     def setContentLookup(self, enabled):
         pass
+
+    def setMimeType(self, mimetype):
+        self.mimetype = mimetype
 
     def setArt(self, art):
         self._art = dict(art)

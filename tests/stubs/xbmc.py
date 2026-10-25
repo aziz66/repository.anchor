@@ -17,6 +17,9 @@ class Player:
     def __init__(self):
         pass
 
+    def isPlaying(self):
+        return True   # consistent with getTime() below answering
+
     def isPlayingVideo(self):
         return False
 

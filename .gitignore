@@ -30,3 +30,5 @@ Thumbs.db
 AGENT-READINESS.md
 anchor.md
 AGENTS.md
+# Session handoff notes: they describe the owner's devices and logs.
+HANDOFF-*.md

@@ -12,6 +12,7 @@ resume position comes from Trakt and/or Simkl (via the anchor.sync fan-out).
 
 from __future__ import annotations
 
+import sys
 import time
 
 import xbmc
@@ -193,6 +194,8 @@ class Scrobbler(xbmc.Player):
         return bool(cur) and cur != self._cid_file
 
     def _pct(self):
+        if not self.isPlaying():
+            return self.progress
         try:
             total = self.getTotalTime()
             return 100.0 * self.getTime() / total if total > 0 else self.progress
@@ -215,6 +218,14 @@ class Scrobbler(xbmc.Player):
         if self._moved_on():
             # The player has advanced to the next item; its position is not
             # self.cid's. Keep self.cid's last in-play sample untouched.
+            return
+        # isPlaying(), NOT isPlayingVideo(): getTime()/getTotalTime() raise
+        # exactly when Kodi's IsPlaying() is false (legacy Player.cpp), so this
+        # skips only reads that would have failed - but quietly. The raise was
+        # caught below anyway, yet Kodi logged it at ERROR ("Kodi is not
+        # playing any media file") on every stop. isPlayingVideo() is already
+        # False during teardown while the position still answers.
+        if not self.isPlaying():
             return
         try:
             total = self.getTotalTime()
@@ -690,6 +701,14 @@ def run():
             xbmc.log("[anchor] service tick failed: %r" % exc,
                      xbmc.LOGWARNING)
     del player
+    # Release the module-level Kodi objects too, or Kodi warns at every exit
+    # that this script "left several classes in memory" (Addon, Window).
+    # popup.py holds its own Addon() once a styled prompt has been shown.
+    global ADDON, HOME
+    del ADDON, HOME
+    popup = sys.modules.get("popup")
+    if popup is not None and hasattr(popup, "ADDON"):
+        del popup.ADDON
 
 
 if __name__ == "__main__":
